@@ -62,7 +62,10 @@ AST_NODE *createNumberNode(double value, NUM_TYPE type)
         yyerror("Memory allocation failed!");
 
     // TODO set the AST_NODE's type, assign values to contained NUM_AST_NODE
-
+	node->type = NUM_NODE_TYPE;
+	node->data.number.type = type;
+	node->data.number.value = value;
+    
     return node;
 }
 
@@ -89,6 +92,18 @@ AST_NODE *createFunctionNode(char *funcName, AST_NODE *op1, AST_NODE *op2)
     // The funcName will be a string identifier for which space should be allocated in the tokenizer.
     // For CUSTOM_OPER functions, you should simply assign the "ident" pointer to the passed in funcName.
     // For functions other than CUSTOM_OPER, you should free the funcName after you've assigned the OPER_TYPE.
+	node->type = FUNC_NODE_TYPE;
+	node->data.function.oper = resolveFunc(funcName);
+	
+	if(node->data.function.oper == CUSTOM_OPER)
+		node->data.function.ident = funcName;
+	else
+		free(funcName);
+	
+	if(op1 != NULL)
+		node->data.function.op1 = op1;
+	if(op2 != NULL)
+		node->data.function.op2 = op2;
 
     return node;
 }
@@ -134,6 +149,12 @@ RET_VAL eval(AST_NODE *node)
     // Use the results of those calls to populate result.
     switch (node->type)
     {
+	    case NUM_NODE_TYPE:
+		    result = evalNumNode(node);
+		    break;
+	    case FUNC_NODE_TYPE:
+		    result = evalFuncNode(node);
+		    break;
         default:
             yyerror("Invalid AST_NODE_TYPE, probably invalid writes somewhere!");
     }
@@ -151,7 +172,8 @@ RET_VAL evalNumNode(AST_NODE *node)
 
     // TODO populate result with the values stored in the node.
     // SEE: AST_NODE, AST_NODE_TYPE, NUM_AST_NODE
-
+	result.type = node->data.number.type;
+	result.value = node->data.number.value;
 
     return result;
 }
@@ -166,13 +188,92 @@ RET_VAL evalFuncNode(AST_NODE *node)
 
     // TODO populate result with the result of running the function on its operands.
     // SEE: AST_NODE, AST_NODE_TYPE, FUNC_AST_NODE
-
-
+	RET_VAL op1 = eval(node->data.function.op1);
+	RET_VAL op2 = eval(node->data.function.op2);
+	
+	if ((op1.type == DOUBLE_TYPE) || (DOUBLE_TYPE == op2.type))
+		result.type = DOUBLE_TYPE;
+	
+	switch(node->data.function.oper)
+	{
+		case NEG_OPER:
+			result.value = -op1.value;
+			break;
+		case ABS_OPER:
+			result.value = fabs(op1.value);
+			break;
+		case EXP_OPER:
+			result.value = exp(op1.value);
+			break;
+		case SQRT_OPER:
+			result.value = sqrt(op1.value);
+			break;
+		case ADD_OPER:
+			result.value = op1.value + op2.value;
+			break;
+		case SUB_OPER:
+			result.value = op1.value - op2.value;
+			break;
+		case MULT_OPER:
+			result.value = op1.value * op2.value;
+			break;
+		case DIV_OPER:
+			result.value = op1.value / op2.value;
+			break;
+		case REMAINDER_OPER:
+			result.value = fmod(op1.value, op2.value);
+			break;
+		case LOG_OPER:
+			result.value = log(op1.value);
+			break;
+		case POW_OPER:
+			result.value = pow(op1.value, op2.value);
+			break;
+		case MAX_OPER:
+			result.value = op1.value > op2.value ? op1.value : op2.value;
+			break;
+		case MIN_OPER:
+			result.value = op1.value < op2.value ? op1.value : op2.value;
+			break;
+		case EXP2_OPER:
+			result.value = op1.value;
+			break;
+		case CBRT_OPER:
+			result.value = cbrt(op1.value);
+			break;
+		case HYPOT_OPER:
+			result.value = hypot(op1.value, op2.value);
+			break;
+		case READ_OPER:
+			break;
+		case RAND_OPER:
+			break;
+		case PRINT_OPER:
+			break;
+		case EQUAL_OPER:
+			break;
+		case LESS_OPER:
+			break;
+		case GREATER_OPER:
+			break;
+		case CUSTOM_OPER:
+			break;
+	}
+	
     return result;
 }
 
 // prints the type and value of a RET_VAL
 void printRetVal(RET_VAL val)
 {
-    // TODO print the type and value of the value passed in.
+	// TODO print the type and value of the value passed in. - Done
+	switch (val.type)
+	{
+		case INT_TYPE:
+			printf("RET_VAL:\n\tType: INT_TYPE\n\tValue: %ld\n", (long) val.value);
+			break;
+		case DOUBLE_TYPE:
+			printf("RET_VAL:\n\tType: DOUBLE_TYPE\n\tValue: %lf\n", val.value);
+			break;
+	}
 }

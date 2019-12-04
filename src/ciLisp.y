@@ -6,7 +6,7 @@
     double dval;
     char *sval;
     struct ast_node *astNode;
-};
+}
 
 %token <sval> FUNC
 %token <dval> INT DOUBLE
