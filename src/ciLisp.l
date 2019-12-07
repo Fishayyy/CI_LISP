@@ -10,8 +10,28 @@ digit [0-9]
 int [+-]?{digit}+
 double [+-]?{digit}+\.{digit}*
 func "neg"|"abs"|"exp"|"sqrt"|"add"|"sub"|"mult"|"div"|"remainder"|"log"|"pow"|"max"|"min"
+symbol [a-zA-Z]+
 
 %%
+
+"quit" {
+    return QUIT;
+}
+
+"(" {
+    fprintf(stderr, "lex: LPAREN\n");
+    return LPAREN;
+}
+
+")" {
+    fprintf(stderr, "lex: RPAREN\n");
+    return RPAREN;
+}
+
+"let" {
+    fprintf(stderr, "lex: LET\n");
+    return LET;
+}
 
 {int} {
     yylval.dval = strtod(yytext, NULL);
@@ -25,38 +45,31 @@ func "neg"|"abs"|"exp"|"sqrt"|"add"|"sub"|"mult"|"div"|"remainder"|"log"|"pow"|"
     return DOUBLE;
 }
 
-"quit" {
-    return QUIT;
-    }
-
 {func} {
-    yylval.sval = (char *) malloc(strlen(yytext)*sizeof(char)+1);
+    yylval.sval = (char *) malloc(strlen(yytext)*sizeof(char));
     strcpy(yylval.sval, yytext);
     fprintf(stderr, "lex: FUNC sval = %s\n", yylval.sval);
     return FUNC;
-    }
+}
 
-"(" {
-    fprintf(stderr, "lex: LPAREN\n");
-    return LPAREN;
-    }
-
-")" {
-    fprintf(stderr, "lex: RPAREN\n");
-    return RPAREN;
-    }
+{symbol} {
+    yylval.sval = (char *) malloc(strlen(yytext)*sizeof(char));
+    strcpy(yylval.sval, yytext);
+    fprintf(stderr, "lex: SYMBOL sval = %s\n", yylval.sval);
+    return SYMBOL;
+}
 
 [\n] {
     fprintf(stderr, "lex: EOL\n");
     YY_FLUSH_BUFFER;
     return EOL;
-    }
+}
 
 [ |\t] ; /* skip whitespace */
 
 . { // anything else
     printf("ERROR: invalid character: >>%s<<\n", yytext);
-    }
+}
 
 %%
 
