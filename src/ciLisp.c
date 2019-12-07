@@ -324,7 +324,7 @@ void printRetVal(RET_VAL val)
 			printf("RET_VAL:\n\tType: INT_TYPE\n\tValue: %ld\n", (long) val.value);
 			break;
 		case DOUBLE_TYPE:
-			printf("RET_VAL:\n\tType: DOUBLE_TYPE\n\tValue: %.4lf\n", val.value);
+			printf("RET_VAL:\n\tType: DOUBLE_TYPE\n\tValue: %lf\n", val.value);
 			break;
 	}
 }

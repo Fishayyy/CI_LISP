@@ -2,8 +2,6 @@ cmake_minimum_required(VERSION 3.8)
 
 project(cilisp)
 
-set(CMAKE_C_STANDARD 11)
-
 SET(CMAKE_C_FLAGS "-m64 -g -O0 -D_DEBUG -Wall")
 
 set(SOURCE_FILES
@@ -28,5 +26,8 @@ add_executable(
         ${BISON_ciLispParser_OUTPUTS}
         ${FLEX_ciLispScanner_OUTPUTS}
 )
+
+set_property(TARGET cilisp PROPERTY C_STANDARD 11)
+set_property(TARGET cilisp PROPERTY C_STANDARD_REQUIRED ON)
 
 target_link_libraries(cilisp m)
