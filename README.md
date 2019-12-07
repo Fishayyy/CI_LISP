@@ -1,5 +1,7 @@
 # CI_LISP
 
+All Debugging and Issues across each task will be documented here
+
 #Task 1
  -All methods tested and acceptable for task 1
  -Currently no error prints for bad number of operands for functions
