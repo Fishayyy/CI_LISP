@@ -1,0 +1,79 @@
+> (neg 5)
+RET_VAL:
+	Type: INT_TYPE
+	Value: -5
+
+> (neg 5.0)
+RET_VAL:
+	Type: DOUBLE_TYPE
+	Value: -5.000000
+
+> (neg -5)
+RET_VAL:
+	Type: INT_TYPE
+	Value: 5
+
+> (neg -5.0)
+RET_VAL:
+	Type: DOUBLE_TYPE
+	Value: 5.000000
+
+> (neg)
+
+> (neg 1 2)
+RET_VAL:
+	Type: INT_TYPE
+	Value: -1
+
+> (abs 1)
+RET_VAL:
+	Type: INT_TYPE
+	Value: 1
+
+> (abs 1.2)
+RET_VAL:
+	Type: DOUBLE_TYPE
+	Value: 1.200000
+
+> (abs -3)
+RET_VAL:
+	Type: INT_TYPE
+	Value: 3
+
+> (abs -1.4)
+RET_VAL:
+	Type: DOUBLE_TYPE
+	Value: 1.400000
+
+> (abs)
+
+> (abs -1 2)
+RET_VAL:
+	Type: INT_TYPE
+	Value: 1
+
+> (add)
+
+> (add 1)
+RET_VAL:
+	Type: INT_TYPE
+	Value: -9223372036854775808
+
+> (add 1.0)
+RET_VAL:
+	Type: DOUBLE_TYPE
+	Value: nan
+
+> (add 1 -1.0)
+RET_VAL:
+	Type: DOUBLE_TYPE
+	Value: 0.000000
+
+> (div 1 0)
+RET_VAL:
+	Type: INT_TYPE
+	Value: -9223372036854775808
+
+> quit
+
+Process finished with exit code 0
