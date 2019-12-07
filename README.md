@@ -1,6 +1,6 @@
 # CI_LISP
 
-#Task 1 
+#Task 1
  -All methods tested and acceptable for task 1
  -Currently no error prints for bad number of operands for functions
 
