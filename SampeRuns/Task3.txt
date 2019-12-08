@@ -1,0 +1,20 @@
+> (div 10 3)
+Integer: 3
+
+> (div double 10 3)
+Double: 3.333333
+
+> ((let (int a 2.0)) (add a 2))
+WARNING: precision loss in the assignment for variable a
+Integer: 4
+
+> ((let (double a 4)) (add a 4))
+Double: 8.000000
+
+> ((let (int a 4.0) (double b 4) (double c 4.0)) (add a (add b c)))
+WARNING: precision loss in the assignment for variable a
+Double: 12.000000
+
+> quit
+
+Process finished with exit code 0

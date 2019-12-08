@@ -9,7 +9,7 @@
     struct symbol_table_node *symNode;
 }
 
-%token <sval> FUNC SYMBOL
+%token <sval> FUNC SYMBOL TYPE
 %token <dval> INT DOUBLE
 %token LPAREN RPAREN LET EOL QUIT
 
@@ -48,13 +48,35 @@ s_expr:
 	}
 	|
 	QUIT {
-        		fprintf(stderr, "yacc: s_expr ::= QUIT\n");
-        		exit(EXIT_SUCCESS);
+		fprintf(stderr, "yacc: s_expr ::= QUIT\n");
+		exit(EXIT_SUCCESS);
         }
+        |
 	error {
 		fprintf(stderr, "yacc: s_expr ::= error\n");
 		yyerror("unexpected token");
 		$$ = NULL;
+	};
+
+number:
+	INT {
+		fprintf(stderr, "yacc: number ::= INT\n");
+		$$ = createNumberNode($1, INT_TYPE);
+	}
+	|
+	DOUBLE {
+		fprintf(stderr, "yacc: number ::= DOUBLE\n");
+		$$ = createNumberNode($1, DOUBLE_TYPE);
+	}
+	|
+	TYPE INT {
+		fprintf(stderr, "yacc: number ::= TYPE INT\n");
+                $$ = createNumberNode($2, castType($1));
+	}
+	|
+	TYPE DOUBLE {
+		fprintf(stderr, "yacc: number ::= TYPE DOUBLE\n");
+                $$ = createNumberNode($2, castType($1));
 	};
 
 f_expr:
@@ -67,6 +89,7 @@ f_expr:
 		fprintf(stderr, "yacc: s_expr ::= LPAREN FUNC expr expr RPAREN\n");
 		$$ = createFunctionNode($2, $3, $4);
 	};
+
 let_section:
 	LPAREN LET let_list RPAREN {
 		fprintf(stderr, "yacc: let_section ::= LPAREN LET let_list RPAREN\n");
@@ -86,29 +109,23 @@ let_list:
 	let_list let_elem {
 		fprintf(stderr, "yacc: let_list ::= let_list let_elem\n");
                 $$ = createLetList($1, $2);
-	}
+	};
 
 let_elem:
 	LPAREN SYMBOL s_expr RPAREN {
 		fprintf(stderr, "yacc: let_elem ::= LPAREN SYMBOL s_expr RPAREN\n");
-		$$ = createSymbolTableNode($2,$3);
+		$$ = createSymbolTableNode("",$2,$3);
 	}
+	|
+	LPAREN TYPE SYMBOL s_expr RPAREN {
+		fprintf(stderr, "yacc: let_elem ::= LPAREN TYPE SYMBOL s_expr RPAREN\n");
+		$$ = createSymbolTableNode($2, $3, $4);
+	};
 
 symbol:
 	SYMBOL {
 		fprintf(stderr, "yacc: s_expr ::= symbol\n");
                 $$ = createSymbolASTNode($1);
-	}
-
-number:
-	INT {
-		fprintf(stderr, "yacc: number ::= INT\n");
-		$$ = createNumberNode($1, INT_TYPE);
-	}
-	|
-	DOUBLE {
-		fprintf(stderr, "yacc: number ::= DOUBLE\n");
-		$$ = createNumberNode($1, DOUBLE_TYPE);
 	};
-%%
 
+%%

@@ -5,29 +5,12 @@ void yyerror(char *s) {
 }
 
 char *funcNames[] = {
-		"neg",
-		"abs",
-		"exp",
-		"sqrt",
-		"add",
-		"sub",
-		"mult",
-		"div",
-		"remainder",
-		"log",
-		"pow",
-		"max",
-		"min",
-		"exp2",
-		"cbrt",
-		"hypot",
-		"read",
-		"rand",
-		"print",
-		"equal",
-		"less",
-		"greater",
-		""
+		"neg","abs","exp","sqrt",
+		"add","sub","mult","div",
+		"remainder","log","pow","max",
+		"min","exp2","cbrt","hypot",
+		"read","rand","print","equal",
+		"less","greater",""
 };
 
 OPER_TYPE resolveFunc(char *funcName)
@@ -40,6 +23,18 @@ OPER_TYPE resolveFunc(char *funcName)
         i++;
     }
     return CUSTOM_OPER;
+}
+
+NUM_TYPE castType(char *type)
+{
+	NUM_TYPE numType = UNSPECIFIED_TYPE;
+	
+	if(strcmp("int", type) == 0)
+		numType = INT_TYPE;
+	if(strcmp("double", type) == 0)
+		numType = DOUBLE_TYPE;
+
+	return numType;
 }
 
 AST_NODE *createNumberNode(double value, NUM_TYPE type)
@@ -110,7 +105,7 @@ AST_NODE *createSymbolASTNode(char *ident)
 	return node;
 }
 
-SYMBOL_TABLE_NODE *createSymbolTableNode(char *ident, AST_NODE *value)
+SYMBOL_TABLE_NODE *createSymbolTableNode(char *type, char *ident, AST_NODE *value)
 {
 	SYMBOL_TABLE_NODE *node;
 	size_t nodeSize;
@@ -119,6 +114,7 @@ SYMBOL_TABLE_NODE *createSymbolTableNode(char *ident, AST_NODE *value)
 	if ((node = calloc(nodeSize, 1)) == NULL)
 		yyerror("Memory allocation failed!");
 	
+	node->val_type = castType(type);
 	node->value = value;
 	node->ident = ident;
 	node->next = NULL;
@@ -291,7 +287,17 @@ RET_VAL evalSymbolNode(AST_NODE *node)
 		result = evalFuncNode(symbolTableNode->value);
 	if(symbolTableNode->value->type == NUM_NODE_TYPE)
 		result = evalNumNode(symbolTableNode->value);
-
+	
+	if(symbolTableNode->val_type == INT_TYPE && result.type == DOUBLE_TYPE)
+	{
+		printf("WARNING: precision loss in the assignment for variable %s\n", symbolTableNode->ident);
+		symbolTableNode->value->data.number.value = floor(symbolTableNode->value->data.number.value);
+		result.value = symbolTableNode->value->data.number.value;
+		result.type = INT_TYPE;
+	}
+	if(symbolTableNode->val_type == DOUBLE_TYPE && result.type == INT_TYPE)
+		result.type = DOUBLE_TYPE;
+	
 	return result;
 }
 
@@ -321,10 +327,12 @@ void printRetVal(RET_VAL val)
 	switch (val.type)
 	{
 		case INT_TYPE:
-			printf("RET_VAL:\n\tType: INT_TYPE\n\tValue: %ld\n", (long) val.value);
+			printf("Integer: %ld\n", (long) val.value);
 			break;
 		case DOUBLE_TYPE:
-			printf("RET_VAL:\n\tType: DOUBLE_TYPE\n\tValue: %lf\n", val.value);
+			printf("Double: %lf\n", val.value);
 			break;
+		default:
+			yyerror("Invalid NUM_TYPE, probably invalid writes somewhere!");
 	}
 }

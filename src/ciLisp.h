@@ -16,8 +16,6 @@ int yylex(void);
 
 void yyerror(char *);
 
-
-
 typedef enum oper {
     NEG_OPER, // 0
     ABS_OPER,
@@ -54,7 +52,8 @@ typedef enum {
 
 typedef enum {
     INT_TYPE = 0,
-    DOUBLE_TYPE
+    DOUBLE_TYPE,
+    UNSPECIFIED_TYPE
 } NUM_TYPE;
 
 typedef struct {
@@ -76,6 +75,7 @@ typedef struct symbol_ast_node {
 } SYMBOL_AST_NODE;
 
 typedef struct symbol_table_node {
+	NUM_TYPE val_type;
 	char *ident;
 	struct ast_node *value;
 	struct symbol_table_node *next;
@@ -92,11 +92,12 @@ typedef struct ast_node {
     } data;
 } AST_NODE;
 
+NUM_TYPE castType(char *type);
 AST_NODE *createNumberNode(double value, NUM_TYPE type);
 AST_NODE *createFunctionNode(char *funcName, AST_NODE *op1, AST_NODE *op2);
 AST_NODE *createSymbolASTNode(char *ident);
 
-SYMBOL_TABLE_NODE *createSymbolTableNode(char *ident, AST_NODE *value);
+SYMBOL_TABLE_NODE *createSymbolTableNode(char *type, char *ident, AST_NODE *value);
 SYMBOL_TABLE_NODE *createLetList(SYMBOL_TABLE_NODE *let_list, SYMBOL_TABLE_NODE *let_elem);
 AST_NODE *setSymbolScope(SYMBOL_TABLE_NODE *let_list, AST_NODE *s_expr);
 
