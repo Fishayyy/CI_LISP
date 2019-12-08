@@ -11,6 +11,7 @@ All Debugging and Issues across each task will be documented here
  - All testing shows that everything should be working fine for now and casting properly
  - Still no warning or error prints yet
  - Haven't handled events where multiple symbols in the same scope are defined
+ - Haven't handled events where an undeclared symbol is used
  
 #Task 3
  - All forms of type casting work on both number literals and symbols
