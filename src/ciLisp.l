@@ -9,7 +9,7 @@
 digit [0-9]
 int [+-]?{digit}+
 double [+-]?{digit}+\.{digit}*
-func "neg"|"abs"|"exp"|"sqrt"|"add"|"sub"|"mult"|"div"|"remainder"|"log"|"pow"|"max"|"min"
+func "neg"|"abs"|"exp"|"sqrt"|"add"|"sub"|"mult"|"div"|"remainder"|"log"|"pow"|"max"|"min"|"print"
 type "int"|"double"
 symbol [a-zA-Z]+
 

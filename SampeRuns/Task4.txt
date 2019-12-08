@@ -1,0 +1,31 @@
+> ((let (a 123)) (print a))
+Print:
+	Type: Integer
+	Value: 123
+Integer: 123
+
+> ((let (a 123.0)) (print a))
+Print:
+	Type: Double
+	Value: 123.000000
+Double: 123.000000
+
+> (print 1)
+Print:
+	Type: Integer
+	Value: 1
+Integer: 1
+
+> (print 1.0)
+Print:
+	Type: Double
+	Value: 1.000000
+Double: 1.000000
+
+> (add ((let (a ((let (b 2)) (print (mult b (sqrt 10)))))) (div a 2)) ((let (c 5)) (sqrt c)))
+Print:
+	Type: Double
+	Value: 6.324555
+Double: 5.398346
+
+> quit

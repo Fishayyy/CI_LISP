@@ -10,7 +10,7 @@ char *funcNames[] = {
 		"remainder","log","pow","max",
 		"min","exp2","cbrt","hypot",
 		"read","rand","print","equal",
-		"less","greater",""
+		"less","greater","print",""
 };
 
 OPER_TYPE resolveFunc(char *funcName)
@@ -263,6 +263,13 @@ RET_VAL evalFuncNode(AST_NODE *node)
 		case RAND_OPER:
 			break;
 		case PRINT_OPER:
+			if(op1.type == INT_TYPE)
+				printf("Print:\n\tType: Integer\n\tValue: %ld\n", (long) op1.value);
+			if(op1.type == DOUBLE_TYPE)
+				printf("Print:\n\tType: Double\n\tValue: %lf\n", op1.value);
+			if(op1.type == UNSPECIFIED_TYPE)
+				printf("Print:\n\tType: Unspecified Type\n\tValue: %lf\n", op1.value);
+			result.value = op1.value;
 			break;
 		case EQUAL_OPER:
 			break;
