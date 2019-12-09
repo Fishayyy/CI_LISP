@@ -58,14 +58,21 @@ NUM_TYPE castType(char *type)
 	return numType;
 }
 
+AST_NODE *createASTNode()
+{
+	AST_NODE *node;
+	size_t nodeSize;
+	
+	nodeSize = sizeof(AST_NODE);
+	if ((node = calloc(nodeSize, 1)) == NULL)
+		yyerror("Memory allocation failed!");
+	
+	return node;
+}
+
 AST_NODE *createNumberNode(double value, NUM_TYPE type)
 {
-    AST_NODE *node;
-    size_t nodeSize;
-
-    nodeSize = sizeof(AST_NODE);
-    if ((node = calloc(nodeSize, 1)) == NULL)
-        yyerror("Memory allocation failed!");
+    AST_NODE *node = createASTNode();
 
 	node->type = NUM_NODE_TYPE;
 	node->symbolTable = NULL;
@@ -79,12 +86,7 @@ AST_NODE *createNumberNode(double value, NUM_TYPE type)
 
 AST_NODE *createFunctionNode(char *funcName, AST_NODE *op_list)
 {
-    AST_NODE *node;
-    size_t nodeSize;
-
-    nodeSize = sizeof(AST_NODE);
-    if ((node = calloc(nodeSize, 1)) == NULL)
-        yyerror("Memory allocation failed!");
+	AST_NODE *node = createASTNode();
     
 	node->type = FUNC_NODE_TYPE;
 	node->symbolTable = NULL;
@@ -117,12 +119,7 @@ AST_NODE *createExpressionList(AST_NODE *s_expr, AST_NODE *s_expr_list)
 
 AST_NODE *createSymbolASTNode(char *ident)
 {
-	AST_NODE *node;
-	size_t nodeSize;
-	
-	nodeSize = sizeof(AST_NODE);
-	if ((node = calloc(nodeSize, 1)) == NULL)
-		yyerror("Memory allocation failed!");
+	AST_NODE *node = createASTNode();
 	
 	node->type = SYMBOL_NODE_TYPE;
 	node->symbolTable = NULL;
@@ -130,6 +127,23 @@ AST_NODE *createSymbolASTNode(char *ident)
 	node->data.symbol.ident = ident;
 	node->next = NULL;
 	
+	return node;
+}
+
+AST_NODE *createConditionNode(AST_NODE *condition, AST_NODE *trueExpr, AST_NODE *falseExpr)
+{
+	AST_NODE *node = createASTNode();
+	
+	node->type = COND_NODE_TYPE;
+	node->symbolTable = NULL;
+	node->parent = NULL;
+	condition->parent = node;
+	node->data.condition.cond = condition;
+	trueExpr->parent = node;
+	node->data.condition.trueExpr = trueExpr;
+	falseExpr->parent = node;
+	node->data.condition.falseExpr = falseExpr;
+	node->next = NULL;
 	return node;
 }
 
@@ -203,6 +217,8 @@ RET_VAL eval(AST_NODE *node)
 		    break;
     	case SYMBOL_NODE_TYPE:
     		result = evalSymbolNode(node);
+    	case COND_NODE_TYPE:
+    		result = evalConditionNode(node);
         default:
             yyerror("Invalid AST_NODE_TYPE, probably invalid writes somewhere!");
     }
@@ -368,7 +384,7 @@ RET_VAL evalFuncNode(AST_NODE *node)
 				break;
 			case MAX_OPER:
 			{
-				int max = operand[0].value;
+				double max = operand[0].value;
 				result.type = operand[0].type;
 				for(int i = 1; i < numOps; ++i)
 					if(max < operand[i].value)
@@ -381,7 +397,7 @@ RET_VAL evalFuncNode(AST_NODE *node)
 			}
 			case MIN_OPER:
 			{
-				int min = operand[0].value;
+				double min = operand[0].value;
 				result.type = operand[0].type;
 				for(int i = 1; i < numOps; ++i)
 					if(min > operand[i].value)
@@ -414,12 +430,6 @@ RET_VAL evalFuncNode(AST_NODE *node)
 				result.value = sqrt(sum);
 				break;
 			}
-			case READ_OPER:
-				
-				break;
-			case RAND_OPER:
-				
-				break;
 			case PRINT_OPER:
 				for(int i = 0; i < numOps; ++i)
 				{
@@ -439,24 +449,87 @@ RET_VAL evalFuncNode(AST_NODE *node)
 				result.value = operand[numOps - 1].value;
 				break;
 			case EQUAL_OPER:
-				
+				if(numOps == 1)
+				{
+					result.type = INT_TYPE;
+					result.value = NAN;
+					yyerror("equal called with only one arg!");
+				}
+				else
+				{
+					if(numOps > 2)
+					{
+						printWarning("equal called with extra (ignored) operands!");
+						result.type = (operand[0].type == INT_TYPE && operand[1].type == INT_TYPE) ? INT_TYPE : DOUBLE_TYPE;
+					}
+					result.value = (operand[0].value == operand[1].value) ? 1 : 0;
+				}
 				break;
 			case LESS_OPER:
-				
+				if(numOps == 1)
+				{
+					result.type = INT_TYPE;
+					result.value = NAN;
+					yyerror("less called with only one arg!");
+				}
+				else
+				{
+					if(numOps > 2)
+					{
+						printWarning("less called with extra (ignored) operands!");
+						result.type = (operand[0].type == INT_TYPE && operand[1].type == INT_TYPE) ? INT_TYPE : DOUBLE_TYPE;
+					}
+					result.value = (operand[0].value < operand[1].value) ? 1 : 0;
+				}
 				break;
 			case GREATER_OPER:
-				
+				if(numOps == 1)
+				{
+					result.type = INT_TYPE;
+					result.value = NAN;
+					yyerror("greater called with only one arg!");
+				}
+				else
+				{
+					if(numOps > 2)
+					{
+						printWarning("greater called with extra (ignored) operands!");
+						result.type = (operand[0].type == INT_TYPE && operand[1].type == INT_TYPE) ? INT_TYPE : DOUBLE_TYPE;
+					}
+					result.value = (operand[0].value > operand[1].value) ? 1 : 0;
+				}
 				break;
 			case CUSTOM_OPER:
 				
+				break;
+			default:
 				break;
 		}// end switch(...)
 	}// end if(...)
 	else
 	{
-		char error[BUFF_SIZE] = {"too few parameters for the function "};
+		char line_buff[BUFF_SIZE] = {"too few parameters for the function "};
 		switch(node->data.function.oper)
 		{
+			case READ_OPER:
+			{
+				printf("read := ");
+				fgets(line_buff, sizeof(line_buff), stdin);
+				
+				if (strchr(line_buff, '.'))
+					result.type = DOUBLE_TYPE;
+	
+				result.value = strtod(line_buff,NULL);
+				node->type = NUM_NODE_TYPE;
+				node->data.number = result;
+				break;
+			}
+			case RAND_OPER:
+				result.type = DOUBLE_TYPE;
+				result.value =  (double) (random() / RAND_MAX);
+				node->type = NUM_NODE_TYPE;
+				node->data.number = result;
+				break;
 			case ADD_OPER:
 				printWarning("add call with no operands, 0 returned!");
 				break;
@@ -470,9 +543,9 @@ RET_VAL evalFuncNode(AST_NODE *node)
 				result.value = 0.0;
 				break;
 			default:
-				strcat(error, funcNames[node->data.function.oper]);
+				strcat(line_buff, funcNames[node->data.function.oper]);
 				result.value = NAN;
-				yyerror(error);
+				yyerror(line_buff);
 		}
 	}// end else
 
@@ -493,7 +566,9 @@ RET_VAL evalSymbolNode(AST_NODE *node)
 	
 	if(symbolTableNode->val_type == INT_TYPE && result.type == DOUBLE_TYPE)
 	{
-		printf("WARNING: precision loss in the assignment for variable %s\n", symbolTableNode->ident);
+		char line_buff[BUFF_SIZE] = "precision loss in the assignment for variable ";
+		strcat(line_buff, symbolTableNode->ident);
+		printWarning(line_buff);
 		symbolTableNode->value->data.number.value = floor(symbolTableNode->value->data.number.value);
 		result.value = symbolTableNode->value->data.number.value;
 		result.type = INT_TYPE;
@@ -502,6 +577,11 @@ RET_VAL evalSymbolNode(AST_NODE *node)
 		result.type = DOUBLE_TYPE;
 	
 	return result;
+}
+
+RET_VAL evalConditionNode(AST_NODE *node)
+{
+	return (RET_VAL){INT_TYPE,NAN};
 }
 
 SYMBOL_TABLE_NODE *findSymbolTableNode(char *ident, AST_NODE *node)

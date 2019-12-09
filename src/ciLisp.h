@@ -51,7 +51,8 @@ OPER_TYPE resolveFunc(char *);
 typedef enum {
     NUM_NODE_TYPE,
     FUNC_NODE_TYPE,
-    SYMBOL_NODE_TYPE
+    SYMBOL_NODE_TYPE,
+    COND_NODE_TYPE
 } AST_NODE_TYPE;
 
 typedef enum {
@@ -84,6 +85,12 @@ typedef struct symbol_table_node {
 	struct symbol_table_node *next;
 } SYMBOL_TABLE_NODE;
 
+typedef struct {
+	struct ast_node *cond;
+	struct ast_node *trueExpr;
+	struct ast_node *falseExpr;
+} COND_AST_NODE;
+
 typedef struct ast_node {
     AST_NODE_TYPE type;
 	SYMBOL_TABLE_NODE *symbolTable;
@@ -91,16 +98,19 @@ typedef struct ast_node {
     union {
         NUM_AST_NODE number;
         FUNC_AST_NODE function;
+        COND_AST_NODE condition;
         SYMBOL_AST_NODE symbol;
     } data;
     struct ast_node *next;
 } AST_NODE;
 
 NUM_TYPE castType(char *type);
+AST_NODE *createASTNode();
 AST_NODE *createNumberNode(double value, NUM_TYPE type);
 AST_NODE *createFunctionNode(char *funcName, AST_NODE *op_list);
 AST_NODE *createExpressionList(AST_NODE *s_expr, AST_NODE *s_expr_list);
 AST_NODE *createSymbolASTNode(char *ident);
+AST_NODE *createConditionNode(AST_NODE *condition, AST_NODE *trueExpr, AST_NODE *falseExpr);
 
 SYMBOL_TABLE_NODE *createSymbolTableNode(char *type, char *ident, AST_NODE *value);
 SYMBOL_TABLE_NODE *createLetList(SYMBOL_TABLE_NODE *let_list, SYMBOL_TABLE_NODE *let_elem);
@@ -112,6 +122,7 @@ RET_VAL eval(AST_NODE *node);
 RET_VAL evalNumNode(AST_NODE *node);
 RET_VAL evalFuncNode(AST_NODE *node);
 RET_VAL evalSymbolNode(AST_NODE *node);
+RET_VAL evalConditionNode(AST_NODE *node);
 SYMBOL_TABLE_NODE *findSymbolTableNode(char *ident, AST_NODE *node);
 
 void printRetVal(RET_VAL val);

@@ -34,6 +34,11 @@ symbol [a-zA-Z]+
     return LET;
 }
 
+"cond" {
+    fprintf(stderr, "cond: COND\n");
+    return COND;
+}
+
 {int} {
     yylval.dval = strtod(yytext, NULL);
     fprintf(stderr, "lex: INT dval = %lf\n", yylval.dval);
