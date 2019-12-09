@@ -1,0 +1,203 @@
+> (neg 5)
+Integer: -5
+
+> (neg 5.0)
+Double: -5.000000
+
+> (neg -5.0)
+Double: 5.000000
+
+> (neg -5)
+Integer: 5
+
+> (neg)
+Integer: NAN
+
+> (neg 1 2)
+WARNING: neg called with extra (ignored) operands!
+Integer: -1
+
+> (abs 1)
+Integer: 1
+
+> (abs 1.2)
+Double: 1.200000
+
+> (abs -3)
+Integer: 3
+
+> (abs 0)
+Integer: 0
+
+> (abs 0.0)
+Double: 0.000000
+
+> (abs -1.4)
+Double: 1.400000
+
+> (abs)
+Integer: NAN
+
+> (abs -1 2_
+ERROR: invalid character: >>_<<
+
+> (abs -1 2)
+WARNING: abs called with extra (ignored) operands!
+Integer: 1
+
+> (add)
+WARNING: add call with no operands, 0 returned!
+Integer: 0
+
+> (add 1)
+Integer: 1
+
+> (add 1.0)
+Double: 1.000000
+
+> (add 1 2 3 4 5)
+Integer: 15
+
+> (add 1 -2 3 -4 5 -6)
+Integer: -3
+
+> (add 0.0 1 -2 3 -4 5 -6)
+Double: -3.000000
+
+> (add 1 -1.0)
+Double: 0.000000
+
+> (sub)
+Integer: NAN
+
+> (sub 1)
+Integer: NAN
+
+> (sub 1.0)
+Integer: NAN
+
+> (sub 1 2)
+Integer: -1
+
+> (sub 2 1)
+Integer: 1
+
+> (sub 2.0 1)
+Double: 1.000000
+
+> (sub 2.0 -1)
+Double: 3.000000
+
+> (sub 1 2 3)
+WARNING: sub called with extra (ignored) operands!
+Integer: -1
+
+> (mult)
+WARNING: mult call with no operands, 1 returned!
+Integer: 1
+
+> (mult 1)
+Integer: 1
+
+> (mult 1.0)
+Double: 1.000000
+
+> (mult 1 -2 3 -4 5)
+Integer: 120
+
+> (mult -1.0 2 -3.0 4 -5)
+Double: -120.000000
+
+> (div)
+Integer: NAN
+
+> (div 1)
+Integer: NAN
+
+> (div 1 0)
+Integer: NAN
+
+> (div 1 2)
+Integer: 0
+
+> (div 1.0 2)
+Double: 0.500000
+
+> (div 5 2.0)
+Double: 2.500000
+
+> (div 1 2 3 4)
+WARNING: div called with extra (ignored) operands!
+Integer: 0
+
+> (div 5.0 2 3)
+WARNING: div called with extra (ignored) operands!
+Double: 2.500000
+
+> (remainder)
+Integer: NAN
+
+> (remainder 1)
+Integer: NAN
+
+> (log 0)
+Double: -inf
+
+> (log 1 2)
+WARNING: log called with extra (ignored) operands!
+Double: 0.000000
+
+> (hypot 0 0 0.0 -3 0 0 0 0 4 0.0 -0.0 12)
+Double: 13.000000
+
+> (max 1)
+Integer: 1
+
+> (max 2.0)
+Double: 2.000000
+
+> (max 1 2 25.0 -26 12)
+Double: 25.000000
+
+> (min 1)
+Integer: 1
+
+> (min 2.0)
+Double: 2.000000
+
+> (min -1.0 -12.0 12)
+Double: -12.000000
+
+> (log (exp (log (exp 1))))
+Double: 1.000000
+
+> (sub (mult 1 2 3 4) (add 1 2 3 4))
+Integer: 14
+
+> (sub (mult 1 2 3 -4.0) (add -1 -2 -3 -4))
+Double: -14.000000
+
+> (hypot (sqrt (div 100 7.0)) (mult 6 (sqrt (div 100.0 7))))
+Double: 22.990681
+
+> (hypot (sqrt (div 100 7.0)) (sqrt (mult 6 (div 100.0 7))))
+Double: 10.000000
+
+> (add 1 (add 2 (add 3 (add 4 (add 5 (add 6 (add 7)))))))
+Integer: 28
+
+> (add 1 (add 2 (add 3 (add 4 (add 5 (add 6 (sub 0 -7.0)))))))
+Double: 28.000000
+
+> ((let (int a 1)(double b 2))(print a b 3))
+Print:
+	Integer: 1
+Print:
+	Double: 2.000000
+Print:
+	Integer: 3
+Integer: 3
+
+> quit
+
+Process finished with exit code 0

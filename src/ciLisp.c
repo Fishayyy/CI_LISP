@@ -1,16 +1,37 @@
 #include "ciLisp.h"
 
 void yyerror(char *s) {
-    fprintf(stderr, "\nERROR: %s\n", s);
+    fprintf(stderr, "ERROR: %s\n", s);
+}
+
+void printWarning(char *s) {
+	fprintf(stdout, "WARNING: %s\n", s);
 }
 
 char *funcNames[] = {
-		"neg","abs","exp","sqrt",
-		"add","sub","mult","div",
-		"remainder","log","pow","max",
-		"min","exp2","cbrt","hypot",
-		"read","rand","print","equal",
-		"less","greater","print",""
+		"neg",
+		"abs",
+		"add",
+		"sub",
+		"mult",
+		"div",
+		"remainder",
+		"exp",
+		"exp2",
+		"pow",
+		"log",
+		"sqrt",
+		"cbrt",
+		"hypot",
+		"max",
+		"min",
+		"print",
+		"read",
+		"rand",
+		"equal",
+		"less",
+		"greater",
+		""
 };
 
 OPER_TYPE resolveFunc(char *funcName)
@@ -51,11 +72,12 @@ AST_NODE *createNumberNode(double value, NUM_TYPE type)
 	node->parent = NULL;
 	node->data.number.type = type;
 	node->data.number.value = value;
+	node->next = NULL;
     
     return node;
 }
 
-AST_NODE *createFunctionNode(char *funcName, AST_NODE *op1, AST_NODE *op2)
+AST_NODE *createFunctionNode(char *funcName, AST_NODE *op_list)
 {
     AST_NODE *node;
     size_t nodeSize;
@@ -68,24 +90,29 @@ AST_NODE *createFunctionNode(char *funcName, AST_NODE *op1, AST_NODE *op2)
 	node->symbolTable = NULL;
 	node->parent = NULL;
 	node->data.function.oper = resolveFunc(funcName);
+	node->data.function.op_list = op_list;
+	node->next = NULL;
 	
 	if(node->data.function.oper == CUSTOM_OPER)
 		node->data.function.ident = funcName;
 	else
 		free(funcName);
 	
-	if(op1 != NULL)
+	AST_NODE *temp = op_list;
+	
+	while(temp != NULL)
 	{
-		op1->parent = node;
-		node->data.function.op1 = op1;
-	}
-	if(op2 != NULL)
-	{
-		op2->parent = node;
-		node->data.function.op2 = op2;
+		temp->parent = node;
+		temp = temp->next;
 	}
 
     return node;
+}
+
+AST_NODE *createExpressionList(AST_NODE *s_expr, AST_NODE *s_expr_list)
+{
+	s_expr->next = s_expr_list;
+	return s_expr;
 }
 
 AST_NODE *createSymbolASTNode(char *ident)
@@ -101,6 +128,7 @@ AST_NODE *createSymbolASTNode(char *ident)
 	node->symbolTable = NULL;
 	node->parent = NULL;
 	node->data.symbol.ident = ident;
+	node->next = NULL;
 	
 	return node;
 }
@@ -147,8 +175,7 @@ void freeNode(AST_NODE *node)
 
     if (node->type == FUNC_NODE_TYPE)
     {
-        freeNode(node->data.function.op1);
-        freeNode(node->data.function.op2);
+	    freeNode(node->data.function.op_list);
 
         if (node->data.function.oper == CUSTOM_OPER)
         {
@@ -194,92 +221,261 @@ RET_VAL evalNumNode(AST_NODE *node)
 
 RET_VAL evalFuncNode(AST_NODE *node)
 {
-    RET_VAL result = (RET_VAL){INT_TYPE, NAN};
+    RET_VAL result = (RET_VAL){INT_TYPE, 0};
 
-	RET_VAL op1 = eval(node->data.function.op1);
-	RET_VAL op2 = eval(node->data.function.op2);
+	AST_NODE *temp = node->data.function.op_list;
+	RET_VAL operand[BUFF_SIZE];
+	int numOps = 0;
 	
-	if ((op1.type == DOUBLE_TYPE) || (DOUBLE_TYPE == op2.type))
-		result.type = DOUBLE_TYPE;
-	
-	switch(node->data.function.oper)
+	while(temp != NULL)
 	{
-		case NEG_OPER:
-			result.value = -op1.value;
-			break;
-		case ABS_OPER:
-			result.value = fabs(op1.value);
-			break;
-		case EXP_OPER:
+		operand[numOps] = eval(temp);
+		
+		if(operand[numOps++].type == DOUBLE_TYPE)
 			result.type = DOUBLE_TYPE;
-			result.value = exp(op1.value);
-			break;
-		case SQRT_OPER:
-			result.type = DOUBLE_TYPE;
-			result.value = sqrt(op1.value);
-			break;
-		case ADD_OPER:
-			result.value = op1.value + op2.value;
-			break;
-		case SUB_OPER:
-			result.value = op1.value - op2.value;
-			break;
-		case MULT_OPER:
-			result.value = op1.value * op2.value;
-			break;
-		case DIV_OPER:
-			result.value = op1.value / op2.value;
-			break;
-		case REMAINDER_OPER:
-			result.type = DOUBLE_TYPE;
-			result.value = fmod(op1.value, op2.value);
-			break;
-		case LOG_OPER:
-			result.type = DOUBLE_TYPE;
-			result.value = log(op1.value);
-			break;
-		case POW_OPER:
-			result.value = pow(op1.value, op2.value);
-			break;
-		case MAX_OPER:
-			result.value = op1.value > op2.value ? op1.value : op2.value;
-			break;
-		case MIN_OPER:
-			result.value = op1.value < op2.value ? op1.value : op2.value;
-			break;
-		case EXP2_OPER:
-			result.value = exp2(op1.value);
-			break;
-		case CBRT_OPER:
-			result.type = DOUBLE_TYPE;
-			result.value = cbrt(op1.value);
-			break;
-		case HYPOT_OPER:
-			result.type = DOUBLE_TYPE;
-			result.value = hypot(op1.value, op2.value);
-			break;
-		case READ_OPER:
-			break;
-		case RAND_OPER:
-			break;
-		case PRINT_OPER:
-			if(op1.type == INT_TYPE)
-				printf("Print:\n\tType: Integer\n\tValue: %ld\n", (long) op1.value);
-			if(op1.type == DOUBLE_TYPE)
-				printf("Print:\n\tType: Double\n\tValue: %lf\n", op1.value);
-			if(op1.type == UNSPECIFIED_TYPE)
-				printf("Print:\n\tType: Unspecified Type\n\tValue: %lf\n", op1.value);
-			result.value = op1.value;
-			break;
-		case EQUAL_OPER:
-			break;
-		case LESS_OPER:
-			break;
-		case GREATER_OPER:
-			break;
-		case CUSTOM_OPER:
-			break;
+		
+		temp = temp->next;
 	}
+	
+	if(numOps > 0)
+	{
+		switch(node->data.function.oper)
+		{
+			case NEG_OPER:
+				if(numOps > 1)
+					printWarning("neg called with extra (ignored) operands!");
+				result.type = operand[0].type;
+				result.value = -operand[0].value;
+				break;
+			case ABS_OPER:
+				if(numOps > 1)
+					printWarning("abs called with extra (ignored) operands!");
+				result.type = operand[0].type;
+				result.value = fabs(operand[0].value);
+				break;
+			case EXP_OPER:
+				if(numOps > 1)
+					printWarning("exp called with extra (ignored) operands!");
+				result.type = DOUBLE_TYPE;
+				result.value = exp(operand[0].value);
+				break;
+			case SQRT_OPER:
+				if(numOps > 1)
+					printWarning("sqrt called with extra (ignored) operands!");
+				result.type = DOUBLE_TYPE;
+				result.value = sqrt(operand[0].value);
+				break;
+			case ADD_OPER:
+				for(int i = 0; i < numOps; ++i)
+					result.value += operand[i].value;
+				break;
+			case SUB_OPER:
+				if(numOps == 1)
+				{
+					result.type = INT_TYPE;
+					result.value = NAN;
+					yyerror("sub called with only one arg!");
+				}
+				else
+				{
+					if(numOps > 2)
+					{
+						printWarning("sub called with extra (ignored) operands!");
+						result.type = (operand[0].type == INT_TYPE && operand[1].type == INT_TYPE) ? INT_TYPE : DOUBLE_TYPE;
+					}
+					result.value = operand[0].value - operand[1].value;
+				}
+				break;
+			case MULT_OPER:
+				result.value = operand[0].value;
+				for(int i = 1; i < numOps; ++i)
+					result.value = result.value * operand[i].value;
+				break;
+			case DIV_OPER:
+				if(numOps == 1)
+				{
+					result.type = INT_TYPE;
+					result.value = NAN;
+					yyerror("div called with only one arg!");
+				}
+				else
+				{
+					if (operand[1].value == 0)
+					{
+						result.type = INT_TYPE;
+						result.value = NAN;
+						yyerror("cannot divide by 0!");
+					}
+					else
+					{
+						if (numOps > 2)
+						{
+							printWarning("div called with extra (ignored) operands!");
+							result.type = (operand[0].type == INT_TYPE && operand[1].type == INT_TYPE) ? INT_TYPE : DOUBLE_TYPE;
+						}
+						result.value = (result.type == INT_TYPE) ? floor(operand[0].value / operand[1].value) : operand[0].value / operand[1].value;
+					}
+				}
+				break;
+			case REMAINDER_OPER:
+				if(numOps == 1)
+				{
+					result.type = INT_TYPE;
+					result.value = NAN;
+					yyerror("remainder called with only one arg!");
+				}
+				else
+				{
+					if (operand[1].value == 0)
+					{
+						result.type = INT_TYPE;
+						result.value = NAN;
+						yyerror("cannot divide by 0!");
+					}
+					else
+					{
+						if (numOps > 2)
+						{
+							printWarning("remainder called with extra (ignored) operands!");
+							result.type = (operand[0].type == INT_TYPE && operand[1].type == INT_TYPE) ? INT_TYPE : DOUBLE_TYPE;
+						}
+						result.value = fabs(fmod(operand[0].value, operand[1].value));
+					}
+				}
+				break;
+			case LOG_OPER:
+				if(numOps > 1)
+					printWarning("log called with extra (ignored) operands!");
+				result.type = DOUBLE_TYPE;
+				result.value = log(operand[0].value);
+				break;
+			case POW_OPER:
+				if(numOps == 1)
+				{
+					result.type = INT_TYPE;
+					result.value = NAN;
+					yyerror("pow called with only one arg!");
+				}
+				else
+				{
+					if(numOps > 2)
+					{
+						printWarning("pow called with extra (ignored) operands!");
+						result.type = (operand[0].type == INT_TYPE && operand[1].type == INT_TYPE) ? INT_TYPE : DOUBLE_TYPE;
+					}
+					result.value = pow(operand[0].value, operand[1].value);
+				}
+				break;
+			case MAX_OPER:
+			{
+				int max = operand[0].value;
+				result.type = operand[0].type;
+				for(int i = 1; i < numOps; ++i)
+					if(max < operand[i].value)
+					{
+						max = operand[i].value;
+						result.type = operand[i].type;
+					}
+				result.value = max;
+				break;
+			}
+			case MIN_OPER:
+			{
+				int min = operand[0].value;
+				result.type = operand[0].type;
+				for(int i = 1; i < numOps; ++i)
+					if(min > operand[i].value)
+					{
+						min = operand[i].value;
+						result.type = operand[i].type;
+					}
+				result.value = min;
+				break;
+			}
+			case EXP2_OPER:
+				if(numOps > 1)
+					printWarning("exp2 called with extra (ignored) operands!");
+				result.type = operand[0].type;
+				result.value = exp2(operand[0].value);
+				break;
+			case CBRT_OPER:
+				if(numOps > 1)
+					printWarning("cbrt called with extra (ignored) operands!");
+				result.type = DOUBLE_TYPE;
+				result.value = cbrt(operand[0].value);
+				break;
+			case HYPOT_OPER:
+			{
+				double sum = 0;
+				for(int i = 0; i < numOps; ++i)
+					sum += pow(operand[i].value, 2);
+				
+				result.type = DOUBLE_TYPE;
+				result.value = sqrt(sum);
+				break;
+			}
+			case READ_OPER:
+				
+				break;
+			case RAND_OPER:
+				
+				break;
+			case PRINT_OPER:
+				for(int i = 0; i < numOps; ++i)
+				{
+					switch(operand[i].type)
+					{
+						case INT_TYPE:
+							printf("Print:\n\tInteger: %ld\n", (long) operand[i].value);
+							break;
+						case DOUBLE_TYPE:
+							printf("Print:\n\tDouble: %lf\n", operand[i].value);
+							break;
+						default:
+							break;
+					}
+				}
+				result.type = operand[numOps -1].type;
+				result.value = operand[numOps - 1].value;
+				break;
+			case EQUAL_OPER:
+				
+				break;
+			case LESS_OPER:
+				
+				break;
+			case GREATER_OPER:
+				
+				break;
+			case CUSTOM_OPER:
+				
+				break;
+		}// end switch(...)
+	}// end if(...)
+	else
+	{
+		char error[BUFF_SIZE] = {"too few parameters for the function "};
+		switch(node->data.function.oper)
+		{
+			case ADD_OPER:
+				printWarning("add call with no operands, 0 returned!");
+				break;
+			case MULT_OPER:
+				printWarning("mult call with no operands, 1 returned!");
+				result.value = 1;
+				break;
+			case HYPOT_OPER:
+				printWarning("hypot call with no operands, 0.0 returned!");
+				result.type = DOUBLE_TYPE;
+				result.value = 0.0;
+				break;
+			default:
+				strcat(error, funcNames[node->data.function.oper]);
+				result.value = NAN;
+				yyerror(error);
+		}
+	}// end else
+
 	
     return result;
 }
@@ -334,7 +530,10 @@ void printRetVal(RET_VAL val)
 	switch (val.type)
 	{
 		case INT_TYPE:
-			printf("Integer: %ld\n", (long) val.value);
+			if(isnan(val.value))
+				printf("Integer: NAN\n");
+			else
+				printf("Integer: %ld\n", (long) val.value);
 			break;
 		case DOUBLE_TYPE:
 			printf("Double: %lf\n", val.value);
