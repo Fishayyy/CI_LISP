@@ -22,3 +22,8 @@ All Debugging and Issues across each task will be documented here
  - All printing is working as it should
  - You can also use (print (print (print....) even though that's silly
  - Shouldn't really need any debugging until maybe Task 5 since the function args change
+ 
+ #Task 5
+ - Code passes all test cases included in the new instructions file for Task1 and also passes for everything in the quiz
+ - All things are tested and working from all tasks
+ - Error messages are currently passed through yyerror, thus they are suppressed. May consider switching stream to stdout or not using yyerror for error messages releated to functions
