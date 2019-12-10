@@ -32,4 +32,5 @@ All Debugging and Issues across each task will be documented here
 - Got all error and warning mesasges that I can think of working
 - All new functions are working
 - Design Implementation: Less, Greater and Equal only return INTS
+- Multiple Symbol definitions with the same ID now defaults to the most recently assigned node
 - I hope I'm trying hard enough to break my code. Only time will tell.
