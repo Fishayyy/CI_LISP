@@ -1,7 +1,7 @@
 #include "ciLisp.h"
 
 void yyerror(char *s) {
-    fprintf(stderr, "ERROR: %s\n", s);
+    fprintf(stdout, "ERROR: %s\n", s);
 }
 
 void printWarning(char *s) {
@@ -78,7 +78,7 @@ AST_NODE *createNumberNode(double value, NUM_TYPE type)
 	node->symbolTable = NULL;
 	node->parent = NULL;
 	node->data.number.type = type;
-	node->data.number.value = value;
+	node->data.number.value = (type == INT_TYPE) ? floor(value) : value;
 	node->next = NULL;
     
     return node;
@@ -217,8 +217,10 @@ RET_VAL eval(AST_NODE *node)
 		    break;
     	case SYMBOL_NODE_TYPE:
     		result = evalSymbolNode(node);
+    		break;
     	case COND_NODE_TYPE:
     		result = evalConditionNode(node);
+    		break;
         default:
             yyerror("Invalid AST_NODE_TYPE, probably invalid writes somewhere!");
     }
@@ -436,10 +438,10 @@ RET_VAL evalFuncNode(AST_NODE *node)
 					switch(operand[i].type)
 					{
 						case INT_TYPE:
-							printf("Print:\n\tInteger: %ld\n", (long) operand[i].value);
+							printf("Print ::= Integer: %ld\n", (long) operand[i].value);
 							break;
 						case DOUBLE_TYPE:
-							printf("Print:\n\tDouble: %lf\n", operand[i].value);
+							printf("Print ::= Double: %lf\n", operand[i].value);
 							break;
 						default:
 							break;
@@ -448,61 +450,60 @@ RET_VAL evalFuncNode(AST_NODE *node)
 				result.type = operand[numOps -1].type;
 				result.value = operand[numOps - 1].value;
 				break;
+			case READ_OPER:
+				result.value = NAN;
+				yyerror("read called with operands");
+				break;
+			case RAND_OPER:
+				result.value = NAN;
+				yyerror("rand called with operands");
+				break;
 			case EQUAL_OPER:
+				result.type = INT_TYPE;
 				if(numOps == 1)
 				{
-					result.type = INT_TYPE;
 					result.value = NAN;
 					yyerror("equal called with only one arg!");
 				}
 				else
 				{
 					if(numOps > 2)
-					{
 						printWarning("equal called with extra (ignored) operands!");
-						result.type = (operand[0].type == INT_TYPE && operand[1].type == INT_TYPE) ? INT_TYPE : DOUBLE_TYPE;
-					}
+						
 					result.value = (operand[0].value == operand[1].value) ? 1 : 0;
 				}
 				break;
 			case LESS_OPER:
+				result.type = INT_TYPE;
 				if(numOps == 1)
 				{
-					result.type = INT_TYPE;
 					result.value = NAN;
 					yyerror("less called with only one arg!");
 				}
 				else
 				{
 					if(numOps > 2)
-					{
 						printWarning("less called with extra (ignored) operands!");
-						result.type = (operand[0].type == INT_TYPE && operand[1].type == INT_TYPE) ? INT_TYPE : DOUBLE_TYPE;
-					}
+						
 					result.value = (operand[0].value < operand[1].value) ? 1 : 0;
 				}
 				break;
 			case GREATER_OPER:
+				result.type = INT_TYPE;
 				if(numOps == 1)
 				{
-					result.type = INT_TYPE;
 					result.value = NAN;
 					yyerror("greater called with only one arg!");
 				}
 				else
 				{
 					if(numOps > 2)
-					{
 						printWarning("greater called with extra (ignored) operands!");
-						result.type = (operand[0].type == INT_TYPE && operand[1].type == INT_TYPE) ? INT_TYPE : DOUBLE_TYPE;
-					}
+					
 					result.value = (operand[0].value > operand[1].value) ? 1 : 0;
 				}
 				break;
 			case CUSTOM_OPER:
-				
-				break;
-			default:
 				break;
 		}// end switch(...)
 	}// end if(...)
@@ -526,7 +527,7 @@ RET_VAL evalFuncNode(AST_NODE *node)
 			}
 			case RAND_OPER:
 				result.type = DOUBLE_TYPE;
-				result.value =  (double) (random() / RAND_MAX);
+				result.value =  (double) rand() / RAND_MAX;
 				node->type = NUM_NODE_TYPE;
 				node->data.number = result;
 				break;
@@ -548,8 +549,6 @@ RET_VAL evalFuncNode(AST_NODE *node)
 				yyerror(line_buff);
 		}
 	}// end else
-
-	
     return result;
 }
 
@@ -558,11 +557,21 @@ RET_VAL evalSymbolNode(AST_NODE *node)
 	SYMBOL_TABLE_NODE *symbolTableNode = findSymbolTableNode(node->data.symbol.ident, node);
 
 	RET_VAL result = (RET_VAL){INT_TYPE, NAN};
+	
+	if(symbolTableNode == NULL)
+	{
+		char line_buff[BUFF_SIZE] = "Use of undefined variable ";
+		strcat(line_buff, node->data.symbol.ident);
+		yyerror(line_buff);
+		return result;
+	}
 
 	if(symbolTableNode->value->type == FUNC_NODE_TYPE)
 		result = evalFuncNode(symbolTableNode->value);
-	if(symbolTableNode->value->type == NUM_NODE_TYPE)
+	else if(symbolTableNode->value->type == NUM_NODE_TYPE)
 		result = evalNumNode(symbolTableNode->value);
+	else if(symbolTableNode->value->type == COND_NODE_TYPE)
+		result = evalConditionNode(symbolTableNode->value);
 	
 	if(symbolTableNode->val_type == INT_TYPE && result.type == DOUBLE_TYPE)
 	{
@@ -581,7 +590,7 @@ RET_VAL evalSymbolNode(AST_NODE *node)
 
 RET_VAL evalConditionNode(AST_NODE *node)
 {
-	return (RET_VAL){INT_TYPE,NAN};
+	return (eval(node->data.condition.cond).value == 1) ? eval(node->data.condition.trueExpr) : eval(node->data.condition.falseExpr);
 }
 
 SYMBOL_TABLE_NODE *findSymbolTableNode(char *ident, AST_NODE *node)

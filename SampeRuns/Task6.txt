@@ -1,0 +1,123 @@
+> (rand)
+Double: 0.840188
+
+> (rand 1)
+ERROR: rand called with operands
+Integer: NAN
+
+> (read)
+read := 1
+Integer: 1
+
+> (read 1.0)
+ERROR: read called with operands
+Double: nan
+
+> (read)
+read := 1.0
+Double: 1.000000
+
+> (equal)
+ERROR: too few parameters for the function equal
+Integer: NAN
+
+> (equal 1)
+ERROR: equal called with only one arg!
+Integer: NAN
+
+> (equal 1 1)
+Integer: 1
+
+> (equal 1 0)
+Integer: 0
+
+> (equal 0 1)
+Integer: 0
+
+> (equal 1.0 2.0)
+Integer: 0
+
+> (equal 1 2 3)
+WARNING: equal called with extra (ignored) operands!
+Integer: 0
+
+> (less 1 1)
+Integer: 0
+
+> (less 1.0 2)
+Integer: 1
+
+> (less)
+ERROR: too few parameters for the function less
+Integer: NAN
+
+> (less 1.0)
+ERROR: less called with only one arg!
+Integer: NAN
+
+> (less 1 2 3 4)
+WARNING: less called with extra (ignored) operands!
+Integer: 1
+
+> (greater 1 1)
+Integer: 0
+
+> (greater 1.0 2)
+Integer: 0
+
+> (greater)
+ERROR: too few parameters for the function greater
+Integer: NAN
+
+> (greater 1)
+ERROR: greater called with only one arg!
+Integer: NAN
+
+> (greater 4 5 6)
+WARNING: greater called with extra (ignored) operands!
+Integer: 0
+
+> (cond (less 1 2) (print 3) (print 4))
+Print:
+	Integer: 3
+Integer: 3
+
+> ((let (myA (read))(myB (rand)))(cond (less myA myB) (print myA) (print myB)))
+read := 0.5
+Print:
+	Double: 0.500000
+Double: 0.500000
+
+> ((let (int a (read)) (double b (read)) (c (read)) (d (read))) (print a b c d))
+read := 12
+read := 13.0
+read := 4
+read := 17.2
+Print:
+	Integer: 12
+Print:
+	Double: 13.000000
+Print:
+	Integer: 4
+Print:
+	Double: 17.200000
+Double: 17.200000
+
+> ((let (int a (read)) (double b (read)) (c (read)) (d (read))) (print a b c d))
+read := 3
+read := 5.0
+read := 10
+read := 5.175
+Print:
+	Integer: 3
+Print:
+	Double: 5.000000
+Print:
+	Integer: 10
+Print:
+	Double: 5.175000
+Double: 5.175000
+
+> quit
+
+Process finished with exit code 0
