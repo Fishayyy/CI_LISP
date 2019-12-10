@@ -27,3 +27,9 @@ All Debugging and Issues across each task will be documented here
  - Code passes all test cases included in the new instructions file for Task1 and also passes for everything in the quiz
  - All things are tested and working from all tasks
  - Error messages are currently passed through yyerror, thus they are suppressed. May consider switching stream to stdout or not using yyerror for error messages releated to functions
+
+#Task 6
+- Got all error and warning mesasges that I can think of working
+- All new functions are working
+- Design Implementation: Less, Greater and Equal only return INTS
+- I hope I'm trying hard enough to break my code. Only time will tell.
