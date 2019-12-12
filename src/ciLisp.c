@@ -4,23 +4,32 @@ void yyerror(char *s) {
 	fprintf(stdout, "ERROR: %s\n", s);
 }
 
-void freeNode(AST_NODE *node)
-{
-	if (!node)
+void freeNode(AST_NODE *node) {
+	if (NULL == node)
 		return;
 	
-	if (node->type == FUNC_NODE_TYPE)
-	{
-		freeNode(node->data.function.op_list);
-		
-		if (node->data.function.oper == CUSTOM_OPER)
-		{
-			free(node->data.function.ident);
-		}
+	switch (node->type) {
+		case FUNC_NODE_TYPE:
+			freeNode(node->data.function.op_list->next);
+			if(!node->data.function.ident)
+				free(node->data.function.ident);
+			freeNode(node->data.function.op_list);
+			break;
+		case COND_NODE_TYPE:
+			freeNode(node->data.condition.condition);
+			freeNode(node->data.condition.trueExpr);
+			freeNode(node->data.condition.falseExpr);
+			break;
+		case SYMBOL_NODE_TYPE:
+			free(node->data.symbol.ident);
+			break;
+		default:
+			break;
 	}
 	
 	free(node);
 }
+
 
 void printWarning(char *s) {
 	fprintf(stdout, "WARNING: %s\n", s);
@@ -607,32 +616,36 @@ RET_VAL evalSymbolNode(AST_NODE *node)
 	
 	RET_VAL result = DEFAULT_RET_VAL;
 	
-	if(symbolTableNode == NULL)
+	switch(symbolTableNode->type)
 	{
-		char line_buff[BUFF_SIZE] = "Use of undefined variable ";
-		strcat(line_buff, node->data.symbol.ident);
-		yyerror(line_buff);
-		return result;
+		case VARIABLE_TYPE:
+			if (symbolTableNode == NULL)
+			{
+				char line_buff[BUFF_SIZE] = "Use of undefined variable ";
+				strcat(line_buff, node->data.symbol.ident);
+				yyerror(line_buff);
+				return result;
+			}
+			
+			if (symbolTableNode->value->type == FUNC_NODE_TYPE)
+				result = evalFuncNode(symbolTableNode->value);
+			else if (symbolTableNode->value->type == NUM_NODE_TYPE)
+				result = evalNumNode(symbolTableNode->value);
+			else if (symbolTableNode->value->type == COND_NODE_TYPE)
+				result = evalConditionNode(symbolTableNode->value);
+			
+			if (symbolTableNode->val_type == INT_TYPE && result.type == DOUBLE_TYPE)
+			{
+				char line_buff[BUFF_SIZE] = "precision loss in the assignment for variable ";
+				strcat(line_buff, symbolTableNode->ident);
+				printWarning(line_buff);
+				symbolTableNode->value->data.number.value = floor(symbolTableNode->value->data.number.value);
+				result.value = symbolTableNode->value->data.number.value;
+				result.type = INT_TYPE;
+			}
+			if (symbolTableNode->val_type == DOUBLE_TYPE && result.type == INT_TYPE)
+				result.type = DOUBLE_TYPE;
 	}
-	
-	if(symbolTableNode->value->type == FUNC_NODE_TYPE)
-		result = evalFuncNode(symbolTableNode->value);
-	else if(symbolTableNode->value->type == NUM_NODE_TYPE)
-		result = evalNumNode(symbolTableNode->value);
-	else if(symbolTableNode->value->type == COND_NODE_TYPE)
-		result = evalConditionNode(symbolTableNode->value);
-	
-	if(symbolTableNode->val_type == INT_TYPE && result.type == DOUBLE_TYPE)
-	{
-		char line_buff[BUFF_SIZE] = "precision loss in the assignment for variable ";
-		strcat(line_buff, symbolTableNode->ident);
-		printWarning(line_buff);
-		symbolTableNode->value->data.number.value = floor(symbolTableNode->value->data.number.value);
-		result.value = symbolTableNode->value->data.number.value;
-		result.type = INT_TYPE;
-	}
-	if(symbolTableNode->val_type == DOUBLE_TYPE && result.type == INT_TYPE)
-		result.type = DOUBLE_TYPE;
 	
 	return result;
 }
