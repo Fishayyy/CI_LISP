@@ -616,16 +616,17 @@ RET_VAL evalSymbolNode(AST_NODE *node)
 	
 	RET_VAL result = DEFAULT_RET_VAL;
 	
+	if (symbolTableNode == NULL)
+	{
+		char line_buff[BUFF_SIZE] = "Use of undefined variable ";
+		strcat(line_buff, node->data.symbol.ident);
+		yyerror(line_buff);
+		return result;
+	}
+	
 	switch(symbolTableNode->type)
 	{
 		case VARIABLE_TYPE:
-			if (symbolTableNode == NULL)
-			{
-				char line_buff[BUFF_SIZE] = "Use of undefined variable ";
-				strcat(line_buff, node->data.symbol.ident);
-				yyerror(line_buff);
-				return result;
-			}
 			
 			if (symbolTableNode->value->type == FUNC_NODE_TYPE)
 				result = evalFuncNode(symbolTableNode->value);
@@ -645,6 +646,9 @@ RET_VAL evalSymbolNode(AST_NODE *node)
 			}
 			if (symbolTableNode->val_type == DOUBLE_TYPE && result.type == INT_TYPE)
 				result.type = DOUBLE_TYPE;
+		default:
+			//Maybe Here is where I could do something?
+			break;
 	}
 	
 	return result;
