@@ -10,7 +10,7 @@ digit [0-9]
 int [+-]?{digit}+
 double [+-]?{digit}+\.{digit}*
 func "neg"|"abs"|"add"|"sub"|"mult"|"div"|"remainder"|"exp"|"exp2"|"pow"|"log"|"sqrt"|"cbrt"|"hypot"|"max"|"min"|"print"|"read"|"rand"|"equal"|"less"|"greater"
-type "int"|"double"
+numType "int"|"double"
 symbol [a-zA-Z]+
 
 %%
@@ -34,9 +34,14 @@ symbol [a-zA-Z]+
     return LET;
 }
 
-"cond" {
-    fprintf(stderr, "cond: COND\n");
+"condition" {
+    fprintf(stderr, "condition: COND\n");
     return COND;
+}
+
+"lambda" {
+    fprintf(stderr, "lex: LAMBDA\n");
+    return LAMBDA;
 }
 
 {int} {
@@ -58,7 +63,7 @@ symbol [a-zA-Z]+
     return FUNC;
 }
 
-{type} {
+{numType} {
     yylval.sval = (char *) malloc(strlen(yytext)*sizeof(char));
     strcpy(yylval.sval, yytext);
     fprintf(stderr, "lex: TYPE sval = %s\n", yylval.sval);

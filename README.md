@@ -14,7 +14,7 @@ All Debugging and Issues across each task will be documented here
  - Haven't handled events where an undeclared symbol is used
  
 #Task 3
- - All forms of type casting work on both number literals and symbols
+ - All forms of numType casting work on both number literals and symbols
  - Design Choice: If you cast a Double to an Integer a warning message will be displayed, but the symbol will be treated as a integer for the remainder of it's binding, unless recast at a later point.
  - Can't re-cast a symbol if it isn't in a let section (Although that functionality isn't included in the grammar)
  

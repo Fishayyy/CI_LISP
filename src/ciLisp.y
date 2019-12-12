@@ -11,10 +11,10 @@
 
 %token <sval> FUNC SYMBOL TYPE
 %token <dval> INT DOUBLE
-%token LPAREN RPAREN LET COND EOL QUIT
+%token LPAREN RPAREN LET COND LAMBDA EOL QUIT
 
-%type <astNode> number f_expr s_expr symbol s_expr_list
-%type <symNode> let_section let_list let_elem
+%type <astNode> number f_expr s_expr s_expr_list
+%type <symNode> let_section let_list let_elem arg_list
 
 %%
 
@@ -33,10 +33,10 @@ s_expr:
 		$$ = $1;
 	}
 	|
-	symbol {
+	SYMBOL {
 		fprintf(stderr, "yacc: s_expr ::= symbol\n");
-		$$ = $1;
-	}
+		$$ = createSymbolASTNode($1);
+       	}
 	|
 	f_expr {
 		$$ = $1;
@@ -88,6 +88,11 @@ f_expr:
 	LPAREN FUNC s_expr_list RPAREN {
                 fprintf(stderr, "yacc: f_expr ::= LPAREN FUNC s_expr_list RPAREN\n");
                 $$ = createFunctionNode($2, $3);
+	}
+	|
+	LPAREN SYMBOL s_expr_list RPAREN {
+		fprintf(stderr, "yacc: f_expr ::= LPAREN SYMBOL expr RPAREN\n");
+                $$ = createFunctionNode($2, $3);
 	};
 
 s_expr_list:
@@ -95,7 +100,8 @@ s_expr_list:
 	 	fprintf(stderr, "yacc: s_expr_list ::= s_expr s_expr_list\n");
                 $$ = createExpressionList($1, $2);
 	}
-	| s_expr {
+	|
+	s_expr {
 	 	fprintf(stderr, "yacc: s_expr_list ::= s_expr\n");
                 $$ = $1;
 	}
@@ -133,12 +139,27 @@ let_elem:
 	LPAREN TYPE SYMBOL s_expr RPAREN {
 		fprintf(stderr, "yacc: let_elem ::= LPAREN TYPE SYMBOL s_expr RPAREN\n");
 		$$ = createSymbolTableNode($2, $3, $4);
+	}
+        |
+        LPAREN SYMBOL LAMBDA LPAREN arg_list RPAREN s_expr RPAREN {
+            	fprintf(stderr, "yacc: let_elem ::= LPAREN SYMBOL LAMBDA LPAREN arg_list RPAREN s_expr RPAREN\n");
+                $$ = createLambdaFunc("", $2, $5, $7);
+        }
+        |
+	LPAREN TYPE SYMBOL LAMBDA LPAREN arg_list RPAREN s_expr RPAREN {
+		fprintf(stderr, "yacc: let_elem ::= LPAREN type SYMBOL LAMBDA LPAREN arg_list RPAREN s_expr RPAREN\n");
+		$$ = createLambdaFunc($2, $3, $6, $8);
 	};
 
-symbol:
+arg_list:
+	SYMBOL arg_list {
+		fprintf(stderr, "yacc: arg_list ::= SYMBOL arg_list\n");
+		$$ = createArgList($1, $2);
+	}
+	|
 	SYMBOL {
-		fprintf(stderr, "yacc: s_expr ::= symbol\n");
-                $$ = createSymbolASTNode($1);
+		fprintf(stderr, "yacc: arg_list ::= SYMBOL\n");
+		$$ = createArgList($1, NULL);
 	};
 
 %%

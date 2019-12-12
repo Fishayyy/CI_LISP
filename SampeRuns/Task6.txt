@@ -77,12 +77,12 @@ Integer: NAN
 WARNING: greater called with extra (ignored) operands!
 Integer: 0
 
-> (cond (less 1 2) (print 3) (print 4))
+> (condition (less 1 2) (print 3) (print 4))
 Print:
 	Integer: 3
 Integer: 3
 
-> ((let (myA (read))(myB (rand)))(cond (less myA myB) (print myA) (print myB)))
+> ((let (myA (read))(myB (rand)))(condition (less myA myB) (print myA) (print myB)))
 read := 0.5
 Print:
 	Double: 0.500000

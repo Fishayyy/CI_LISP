@@ -1,7 +1,25 @@
 #include "ciLisp.h"
 
 void yyerror(char *s) {
-    fprintf(stdout, "ERROR: %s\n", s);
+	fprintf(stdout, "ERROR: %s\n", s);
+}
+
+void freeNode(AST_NODE *node)
+{
+	if (!node)
+		return;
+	
+	if (node->type == FUNC_NODE_TYPE)
+	{
+		freeNode(node->data.function.op_list);
+		
+		if (node->data.function.oper == CUSTOM_OPER)
+		{
+			free(node->data.function.ident);
+		}
+	}
+	
+	free(node);
 }
 
 void printWarning(char *s) {
@@ -9,41 +27,46 @@ void printWarning(char *s) {
 }
 
 char *funcNames[] = {
+		//UNARY
 		"neg",
 		"abs",
-		"add",
-		"sub",
-		"mult",
-		"div",
-		"remainder",
 		"exp",
 		"exp2",
-		"pow",
 		"log",
 		"sqrt",
 		"cbrt",
-		"hypot",
-		"max",
-		"min",
-		"print",
-		"read",
-		"rand",
+		//BINARY
+		"sub",
+		"div",
+		"remainder",
+		"pow",
 		"equal",
 		"less",
 		"greater",
+		//N-ARY
+		"add",
+		"mult",
+		"hypot",
+		"max",
+		"min",
+		//NO-OPERANDS
+		"print",
+		"read",
+		"rand",
+		//UNKNOWN
 		""
 };
 
 OPER_TYPE resolveFunc(char *funcName)
 {
-    int i = 0;
-    while (funcNames[i][0] != '\0')
-    {
-        if (strcmp(funcNames[i], funcName) == 0)
-            return i;
-        i++;
-    }
-    return CUSTOM_OPER;
+	int i = 0;
+	while (funcNames[i][0] != '\0')
+	{
+		if (strcmp(funcNames[i], funcName) == 0)
+			return i;
+		i++;
+	}
+	return CUSTOM_OPER;
 }
 
 NUM_TYPE castType(char *type)
@@ -54,11 +77,11 @@ NUM_TYPE castType(char *type)
 		numType = INT_TYPE;
 	if(strcmp("double", type) == 0)
 		numType = DOUBLE_TYPE;
-
+	
 	return numType;
 }
 
-AST_NODE *createASTNode()
+AST_NODE *initASTNode()
 {
 	AST_NODE *node;
 	size_t nodeSize;
@@ -72,22 +95,22 @@ AST_NODE *createASTNode()
 
 AST_NODE *createNumberNode(double value, NUM_TYPE type)
 {
-    AST_NODE *node = createASTNode();
-
+	AST_NODE *node = initASTNode();
+	
 	node->type = NUM_NODE_TYPE;
 	node->symbolTable = NULL;
 	node->parent = NULL;
 	node->data.number.type = type;
 	node->data.number.value = (type == INT_TYPE) ? floor(value) : value;
 	node->next = NULL;
-    
-    return node;
+	
+	return node;
 }
 
 AST_NODE *createFunctionNode(char *funcName, AST_NODE *op_list)
 {
-	AST_NODE *node = createASTNode();
-    
+	AST_NODE *node = initASTNode();
+	
 	node->type = FUNC_NODE_TYPE;
 	node->symbolTable = NULL;
 	node->parent = NULL;
@@ -107,8 +130,8 @@ AST_NODE *createFunctionNode(char *funcName, AST_NODE *op_list)
 		temp->parent = node;
 		temp = temp->next;
 	}
-
-    return node;
+	
+	return node;
 }
 
 AST_NODE *createExpressionList(AST_NODE *s_expr, AST_NODE *s_expr_list)
@@ -119,7 +142,7 @@ AST_NODE *createExpressionList(AST_NODE *s_expr, AST_NODE *s_expr_list)
 
 AST_NODE *createSymbolASTNode(char *ident)
 {
-	AST_NODE *node = createASTNode();
+	AST_NODE *node = initASTNode();
 	
 	node->type = SYMBOL_NODE_TYPE;
 	node->symbolTable = NULL;
@@ -132,13 +155,13 @@ AST_NODE *createSymbolASTNode(char *ident)
 
 AST_NODE *createConditionNode(AST_NODE *condition, AST_NODE *trueExpr, AST_NODE *falseExpr)
 {
-	AST_NODE *node = createASTNode();
+	AST_NODE *node = initASTNode();
 	
 	node->type = COND_NODE_TYPE;
 	node->symbolTable = NULL;
 	node->parent = NULL;
 	condition->parent = node;
-	node->data.condition.cond = condition;
+	node->data.condition.condition = condition;
 	trueExpr->parent = node;
 	node->data.condition.trueExpr = trueExpr;
 	falseExpr->parent = node;
@@ -147,7 +170,7 @@ AST_NODE *createConditionNode(AST_NODE *condition, AST_NODE *trueExpr, AST_NODE 
 	return node;
 }
 
-SYMBOL_TABLE_NODE *createSymbolTableNode(char *type, char *ident, AST_NODE *value)
+SYMBOL_TABLE_NODE *initSymbolTableNode()
 {
 	SYMBOL_TABLE_NODE *node;
 	size_t nodeSize;
@@ -156,9 +179,47 @@ SYMBOL_TABLE_NODE *createSymbolTableNode(char *type, char *ident, AST_NODE *valu
 	if ((node = calloc(nodeSize, 1)) == NULL)
 		yyerror("Memory allocation failed!");
 	
+	return node;
+}
+
+SYMBOL_TABLE_NODE *createSymbolTableNode(char *type, char *ident, AST_NODE *value)
+{
+	SYMBOL_TABLE_NODE *node = initSymbolTableNode();
+	
+	node->type = VARIABLE_TYPE;
 	node->val_type = castType(type);
-	node->value = value;
 	node->ident = ident;
+	node->value = value;
+	node->stack = NULL;
+	node->next = NULL;
+	
+	return node;
+}
+
+SYMBOL_TABLE_NODE *createArgList(char *argument, SYMBOL_TABLE_NODE *arg_list)
+{
+	SYMBOL_TABLE_NODE *node = initSymbolTableNode();
+	
+	node->type = ARG_TYPE;
+	node->val_type = UNSPECIFIED_TYPE;
+	node->ident = argument;
+	node->value = NULL;
+	node->stack = NULL;
+	node->next = arg_list;
+	
+	return node;
+}
+
+SYMBOL_TABLE_NODE *createLambdaFunc(char *type, char *ident, SYMBOL_TABLE_NODE *argList, AST_NODE *function)
+{
+	SYMBOL_TABLE_NODE *node = initSymbolTableNode();
+	
+	node->type = LAMBDA_TYPE;
+	node->val_type = castType(type);
+	node->ident = ident;
+	node->value = function;
+	node->value->symbolTable = argList;
+	node->stack = NULL;
 	node->next = NULL;
 	
 	return node;
@@ -182,77 +243,62 @@ AST_NODE *setSymbolScope(SYMBOL_TABLE_NODE *let_list, AST_NODE *s_expr)
 	return s_expr;
 }
 
-void freeNode(AST_NODE *node)
-{
-    if (!node)
-        return;
-
-    if (node->type == FUNC_NODE_TYPE)
-    {
-	    freeNode(node->data.function.op_list);
-
-        if (node->data.function.oper == CUSTOM_OPER)
-        {
-            free(node->data.function.ident);
-        }
-    }
-
-    free(node);
-}
-
 RET_VAL eval(AST_NODE *node)
 {
-    RET_VAL result = (RET_VAL){INT_TYPE, NAN};
-    
-    if (!node)
-        return result;
-
-    switch (node->type)
-    {
-	    case NUM_NODE_TYPE:
-		    result = evalNumNode(node);
-		    break;
-	    case FUNC_NODE_TYPE:
-		    result = evalFuncNode(node);
-		    break;
-    	case SYMBOL_NODE_TYPE:
-    		result = evalSymbolNode(node);
-    		break;
-    	case COND_NODE_TYPE:
-    		result = evalConditionNode(node);
-    		break;
-        default:
-            yyerror("Invalid AST_NODE_TYPE, probably invalid writes somewhere!");
-    }
-    return result;
-}  
+	RET_VAL result = DEFAULT_RET_VAL;
+	
+	if (!node)
+		return result;
+	
+	switch (node->type)
+	{
+		case NUM_NODE_TYPE:
+			result = evalNumNode(node);
+			break;
+		case FUNC_NODE_TYPE:
+			result = evalFuncNode(node);
+			break;
+		case SYMBOL_NODE_TYPE:
+			result = evalSymbolNode(node);
+			break;
+		case COND_NODE_TYPE:
+			result = evalConditionNode(node);
+			break;
+		default:
+			yyerror("Invalid AST_NODE_TYPE, probably invalid writes somewhere!");
+	}
+	return result;
+}
 
 RET_VAL evalNumNode(AST_NODE *node)
 {
-    RET_VAL result = (RET_VAL){INT_TYPE, NAN};
-
+	RET_VAL result = DEFAULT_RET_VAL;
+	
 	result.type = node->data.number.type;
 	result.value = node->data.number.value;
-
-    return result;
+	
+	return result;
 }
 
 RET_VAL evalFuncNode(AST_NODE *node)
 {
-    RET_VAL result = (RET_VAL){INT_TYPE, 0};
-
+	RET_VAL result = (RET_VAL){INT_TYPE, 0};
+	
 	AST_NODE *temp = node->data.function.op_list;
 	RET_VAL operand[BUFF_SIZE];
 	int numOps = 0;
 	
-	while(temp != NULL)
+	if(node->data.function.oper != CUSTOM_OPER)
 	{
-		operand[numOps] = eval(temp);
-		
-		if(operand[numOps++].type == DOUBLE_TYPE)
-			result.type = DOUBLE_TYPE;
-		
-		temp = temp->next;
+		while (temp != NULL)
+		{
+			operand[numOps] = eval(temp);
+			
+			if (operand[numOps++].type == DOUBLE_TYPE)
+				result.type = DOUBLE_TYPE;
+			
+			temp = temp->next;
+		}
 	}
 	
 	if(numOps > 0)
@@ -469,7 +515,7 @@ RET_VAL evalFuncNode(AST_NODE *node)
 				{
 					if(numOps > 2)
 						printWarning("equal called with extra (ignored) operands!");
-						
+					
 					result.value = (operand[0].value == operand[1].value) ? 1 : 0;
 				}
 				break;
@@ -484,7 +530,7 @@ RET_VAL evalFuncNode(AST_NODE *node)
 				{
 					if(numOps > 2)
 						printWarning("less called with extra (ignored) operands!");
-						
+					
 					result.value = (operand[0].value < operand[1].value) ? 1 : 0;
 				}
 				break;
@@ -503,7 +549,7 @@ RET_VAL evalFuncNode(AST_NODE *node)
 					result.value = (operand[0].value > operand[1].value) ? 1 : 0;
 				}
 				break;
-			case CUSTOM_OPER:
+			default:
 				break;
 		}// end switch(...)
 	}// end if(...)
@@ -519,7 +565,7 @@ RET_VAL evalFuncNode(AST_NODE *node)
 				
 				if (strchr(line_buff, '.'))
 					result.type = DOUBLE_TYPE;
-	
+				
 				result.value = strtod(line_buff,NULL);
 				node->type = NUM_NODE_TYPE;
 				node->data.number = result;
@@ -543,20 +589,23 @@ RET_VAL evalFuncNode(AST_NODE *node)
 				result.type = DOUBLE_TYPE;
 				result.value = 0.0;
 				break;
+			case CUSTOM_OPER:
+				evalCustomFunction(node);
+				break;
 			default:
 				strcat(line_buff, funcNames[node->data.function.oper]);
 				result.value = NAN;
 				yyerror(line_buff);
 		}
 	}// end else
-    return result;
+	return result;
 }
 
 RET_VAL evalSymbolNode(AST_NODE *node)
 {
 	SYMBOL_TABLE_NODE *symbolTableNode = findSymbolTableNode(node->data.symbol.ident, node);
-
-	RET_VAL result = (RET_VAL){INT_TYPE, NAN};
+	
+	RET_VAL result = DEFAULT_RET_VAL;
 	
 	if(symbolTableNode == NULL)
 	{
@@ -565,7 +614,7 @@ RET_VAL evalSymbolNode(AST_NODE *node)
 		yyerror(line_buff);
 		return result;
 	}
-
+	
 	if(symbolTableNode->value->type == FUNC_NODE_TYPE)
 		result = evalFuncNode(symbolTableNode->value);
 	else if(symbolTableNode->value->type == NUM_NODE_TYPE)
@@ -590,28 +639,145 @@ RET_VAL evalSymbolNode(AST_NODE *node)
 
 RET_VAL evalConditionNode(AST_NODE *node)
 {
-	return (eval(node->data.condition.cond).value == 1) ? eval(node->data.condition.trueExpr) : eval(node->data.condition.falseExpr);
+	return (eval(node->data.condition.condition).value == 1) ? eval(node->data.condition.trueExpr) : eval(node->data.condition.falseExpr);
+}
+
+RET_VAL evalCustomFunction(AST_NODE *node)
+{
+	RET_VAL result = DEFAULT_RET_VAL;
+	
+	if (!node)
+		return result;
+	
+	SYMBOL_TABLE_NODE *lambdaST;
+	AST_NODE *lambdaFunc = node;
+	
+	while (lambdaFunc)
+	{
+		lambdaST = lambdaFunc->symbolTable;
+		while (lambdaST != NULL)
+		{
+			if (strcmp(lambdaST->ident, node->data.function.ident) == 0 && (lambdaST->type == LAMBDA_TYPE))
+			{
+				lambdaFunc = lambdaST->value;
+				STACK_NODE *argValues = createStackNodes(lambdaFunc, node->data.function.op_list);
+				
+				if (!argValues)
+					return result;
+				
+				linkStackNodes(lambdaFunc->symbolTable, argValues);
+				
+				return eval(lambdaFunc);
+			}
+			lambdaST = lambdaST->next;
+		}
+		lambdaFunc = lambdaFunc->parent;
+	}
+	
+	
+	return result;
 }
 
 SYMBOL_TABLE_NODE *findSymbolTableNode(char *ident, AST_NODE *node)
 {
 	if (node == NULL)
 		return NULL;
-
+	
 	if(node->symbolTable == NULL)
 		return findSymbolTableNode(ident, node->parent);
-
+	
 	SYMBOL_TABLE_NODE *temp = node->symbolTable;
-
+	
 	while(temp != NULL)
 	{
 		if(strcmp(ident, temp->ident) == 0)
 			return temp;
-
+		
 		temp = temp->next;
 	}
-
+	
 	return findSymbolTableNode(ident, node->parent);
+}
+
+void linkStackNodes(SYMBOL_TABLE_NODE *arguments, STACK_NODE *parameters)
+{
+	SYMBOL_TABLE_NODE *currArg = arguments;
+	STACK_NODE *currStackNode = parameters;
+	STACK_NODE *prevStackNode;
+	
+	while ((currArg != NULL))
+	{
+		prevStackNode = currStackNode;
+		
+		currArg->retVal = currStackNode->val;
+		
+		currArg = currArg->next;
+		currStackNode = currStackNode->next;
+		free(prevStackNode);
+	}
+}
+
+STACK_NODE *createStackNodes(AST_NODE *lambdaFunc, AST_NODE *paramList)
+{
+	if(!paramList)
+	{
+		yyerror("Parameter List is empty.\n");
+		return NULL;
+	}
+	
+	if (!lambdaFunc)
+	{
+		yyerror("Invalid lambda function.\n");
+		return NULL;
+	}
+	
+	STACK_NODE *top;
+	size_t nodeSize;
+	
+	nodeSize = sizeof(STACK_NODE);
+	if ((top = calloc(nodeSize, 1)) == NULL)
+		yyerror("Memory allocation failed!");
+	
+	top->val = eval(paramList);
+	
+	SYMBOL_TABLE_NODE *currArg = lambdaFunc->symbolTable->next;
+	AST_NODE *currOp = paramList->next;
+	
+	STACK_NODE *currStackFrame = top;
+	
+	while ((currArg != NULL) && (currOp != NULL))
+	{
+		
+		if ((currStackFrame->next = calloc(nodeSize, 1)) == NULL)
+			yyerror("Memory allocation failed!");
+		
+		currStackFrame = currStackFrame->next;
+		currStackFrame->next = NULL;
+		currStackFrame->val = eval(currOp);
+		
+		currArg = currArg->next;
+		currOp = currOp->next;
+	}
+	
+	if ((currArg == NULL) && (currOp != NULL))
+		printWarning("lambda function called with extra (ignored) operands!");
+	else if (currArg != NULL)
+	{
+		yyerror("Too few parameters for lambda function.");
+		while (currArg != NULL)
+		{
+			
+			if ((currStackFrame->next = calloc(nodeSize, 1)) == NULL)
+				yyerror("Memory allocation failed!");
+			
+			currStackFrame = currStackFrame->next;
+			currStackFrame->next = NULL;
+			currStackFrame->val = DEFAULT_RET_VAL;
+			
+			currArg = currArg->next;
+		}
+	}
+	return top;
 }
 
 void printRetVal(RET_VAL val)
