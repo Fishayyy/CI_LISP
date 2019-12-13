@@ -1,0 +1,12 @@
+> ((let (double myFunc lambda (x y) (mult (add x 5) (sub y 2)))) (sub (myFunc 3 5) 2))
+Integer: 22
+
+> ((let (f lambda (x y) (add x y)))(f (sub 5 2) (mult 2 3)))
+Integer: 9
+
+> ((let (int a 1)(f lambda (x y) (add x y)))(f 2 (f a 3)))
+Integer: 6
+
+> quit
+
+Process finished with exit code 0

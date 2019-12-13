@@ -1,3 +1,8 @@
+/**
+* Name: Austin Fisher
+* Lab: CILisp
+* Date: 12/11/19
+**/
 #ifndef __cilisp_h_
 #define __cilisp_h_
 
@@ -81,14 +86,13 @@ typedef struct symbol_ast_node {
 } SYMBOL_AST_NODE;
 
 typedef struct stack_node {
-	RET_VAL val;
+	struct ast_node *value;
 	struct stack_node *next;
 } STACK_NODE;
 
 typedef struct symbol_table_node {
 	SYMBOL_TYPE type;
 	NUM_TYPE val_type;
-	RET_VAL retVal;
 	char *ident;
 	struct ast_node *value;
 	STACK_NODE *stack;

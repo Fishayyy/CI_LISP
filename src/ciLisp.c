@@ -1,3 +1,8 @@
+/**
+* Name: Austin Fisher
+* Lab: CILisp
+* Date: 12/11/19
+**/
 #include "ciLisp.h"
 
 void yyerror(char *s) {
@@ -297,17 +302,15 @@ RET_VAL evalFuncNode(AST_NODE *node)
 	RET_VAL operand[BUFF_SIZE];
 	int numOps = 0;
 	
-	if(node->data.function.oper != CUSTOM_OPER)
+
+	while (temp != NULL)
 	{
-		while (temp != NULL)
-		{
-			operand[numOps] = eval(temp);
-			
-			if (operand[numOps++].type == DOUBLE_TYPE)
-				result.type = DOUBLE_TYPE;
-			
-			temp = temp->next;
-		}
+		operand[numOps] = eval(temp);
+		
+		if (operand[numOps++].type == DOUBLE_TYPE)
+			result.type = DOUBLE_TYPE;
+		
+		temp = temp->next;
 	}
 	
 	if(numOps > 0)
@@ -558,7 +561,8 @@ RET_VAL evalFuncNode(AST_NODE *node)
 					result.value = (operand[0].value > operand[1].value) ? 1 : 0;
 				}
 				break;
-			default:
+			case CUSTOM_OPER:
+				result = evalCustomFunction(node);
 				break;
 		}// end switch(...)
 	}// end if(...)
@@ -599,7 +603,7 @@ RET_VAL evalFuncNode(AST_NODE *node)
 				result.value = 0.0;
 				break;
 			case CUSTOM_OPER:
-				evalCustomFunction(node);
+				result = evalCustomFunction(node);
 				break;
 			default:
 				strcat(line_buff, funcNames[node->data.function.oper]);
@@ -618,38 +622,30 @@ RET_VAL evalSymbolNode(AST_NODE *node)
 	
 	if (symbolTableNode == NULL)
 	{
-		char line_buff[BUFF_SIZE] = "Use of undefined variable ";
+		char line_buff[BUFF_SIZE] = "Use of undefined let_elem ";
 		strcat(line_buff, node->data.symbol.ident);
 		yyerror(line_buff);
 		return result;
 	}
+			
+	if (symbolTableNode->value->type == FUNC_NODE_TYPE)
+		result = evalFuncNode(symbolTableNode->value);
+	else if (symbolTableNode->value->type == NUM_NODE_TYPE)
+		result = evalNumNode(symbolTableNode->value);
+	else if (symbolTableNode->value->type == COND_NODE_TYPE)
+		result = evalConditionNode(symbolTableNode->value);
 	
-	switch(symbolTableNode->type)
+	if (symbolTableNode->val_type == INT_TYPE && result.type == DOUBLE_TYPE)
 	{
-		case VARIABLE_TYPE:
-			
-			if (symbolTableNode->value->type == FUNC_NODE_TYPE)
-				result = evalFuncNode(symbolTableNode->value);
-			else if (symbolTableNode->value->type == NUM_NODE_TYPE)
-				result = evalNumNode(symbolTableNode->value);
-			else if (symbolTableNode->value->type == COND_NODE_TYPE)
-				result = evalConditionNode(symbolTableNode->value);
-			
-			if (symbolTableNode->val_type == INT_TYPE && result.type == DOUBLE_TYPE)
-			{
-				char line_buff[BUFF_SIZE] = "precision loss in the assignment for variable ";
-				strcat(line_buff, symbolTableNode->ident);
-				printWarning(line_buff);
-				symbolTableNode->value->data.number.value = floor(symbolTableNode->value->data.number.value);
-				result.value = symbolTableNode->value->data.number.value;
-				result.type = INT_TYPE;
-			}
-			if (symbolTableNode->val_type == DOUBLE_TYPE && result.type == INT_TYPE)
-				result.type = DOUBLE_TYPE;
-		default:
-			//Maybe Here is where I could do something?
-			break;
+		char line_buff[BUFF_SIZE] = "precision loss in the assignment for variable ";
+		strcat(line_buff, symbolTableNode->ident);
+		printWarning(line_buff);
+		symbolTableNode->value->data.number.value = floor(symbolTableNode->value->data.number.value);
+		result.value = symbolTableNode->value->data.number.value;
+		result.type = INT_TYPE;
 	}
+	if (symbolTableNode->val_type == DOUBLE_TYPE && result.type == INT_TYPE)
+		result.type = DOUBLE_TYPE;
 	
 	return result;
 }
@@ -672,7 +668,7 @@ RET_VAL evalCustomFunction(AST_NODE *node)
 	while (lambdaFunc)
 	{
 		lambdaST = lambdaFunc->symbolTable;
-		while (lambdaST != NULL)
+		while (lambdaST)
 		{
 			if (strcmp(lambdaST->ident, node->data.function.ident) == 0 && (lambdaST->type == LAMBDA_TYPE))
 			{
@@ -690,7 +686,6 @@ RET_VAL evalCustomFunction(AST_NODE *node)
 		}
 		lambdaFunc = lambdaFunc->parent;
 	}
-	
 	
 	return result;
 }
@@ -726,7 +721,7 @@ void linkStackNodes(SYMBOL_TABLE_NODE *arguments, STACK_NODE *parameters)
 	{
 		prevStackNode = currStackNode;
 		
-		currArg->retVal = currStackNode->val;
+		currArg->value = currStackNode->value;
 		
 		currArg = currArg->next;
 		currStackNode = currStackNode->next;
@@ -755,7 +750,8 @@ STACK_NODE *createStackNodes(AST_NODE *lambdaFunc, AST_NODE *paramList)
 	if ((top = calloc(nodeSize, 1)) == NULL)
 		yyerror("Memory allocation failed!");
 	
-	top->val = eval(paramList);
+	RET_VAL retVal = eval(paramList);
+	top->value =  createNumberNode(retVal.value, retVal.type);
 	
 	SYMBOL_TABLE_NODE *currArg = lambdaFunc->symbolTable->next;
 	AST_NODE *currOp = paramList->next;
@@ -770,7 +766,8 @@ STACK_NODE *createStackNodes(AST_NODE *lambdaFunc, AST_NODE *paramList)
 		
 		currStackFrame = currStackFrame->next;
 		currStackFrame->next = NULL;
-		currStackFrame->val = eval(currOp);
+		retVal = eval(currOp);
+		currStackFrame->value = createNumberNode(retVal.value, retVal.type);
 		
 		currArg = currArg->next;
 		currOp = currOp->next;
@@ -783,13 +780,12 @@ STACK_NODE *createStackNodes(AST_NODE *lambdaFunc, AST_NODE *paramList)
 		yyerror("Too few parameters for lambda function.");
 		while (currArg != NULL)
 		{
-			
 			if ((currStackFrame->next = calloc(nodeSize, 1)) == NULL)
 				yyerror("Memory allocation failed!");
 			
 			currStackFrame = currStackFrame->next;
 			currStackFrame->next = NULL;
-			currStackFrame->val = DEFAULT_RET_VAL;
+			currStackFrame->value = createNumberNode(NAN,INT_TYPE);
 			
 			currArg = currArg->next;
 		}
