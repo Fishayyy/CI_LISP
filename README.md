@@ -36,6 +36,6 @@ All Debugging and Issues across each task will be documented here
 - I hope I'm trying hard enough to break my code. Only time will tell.
 
 #Task 7 + 8
--I couldn't get my custom functions to stop SEG-FAULTING for part 9 and I was working up to 12AM so I wasn't able to get this task working.
--I'm also not sure if my free works completely as I was not able to test it thouroughly, but it seems to free properly in most of the scenarios I was able to test
+- I couldn't get my custom functions to stop SEG-FAULTING for part 9 and I was working up to 12AM so I wasn't able to get this task working.
+- I'm also not sure if my free works completely as I was not able to test it thouroughly, but it seems to free properly in most of the scenarios I was able to test
 - Everything up to Task 7/8 should work perfectly and I even implemented extra stuff according to what you mentioned in the new Task 1 instructions. If anything does break I just wasn't able to find a test case for it.
