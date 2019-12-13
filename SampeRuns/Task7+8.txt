@@ -1,5 +1,8 @@
 > ((let (double myFunc lambda (x y) (mult (add x 5) (sub y 2)))) (sub (myFunc 3 5) 2))
-Integer: 22
+Double: 22.000000
+
+> ((let (double myFunc lambda (x y) (mult (add x 5.5) (sub y 2.3)))) (sub (myFunc 3 5) 2))
+Double: 20.950000
 
 > ((let (f lambda (x y) (add x y)))(f (sub 5 2) (mult 2 3)))
 Integer: 9

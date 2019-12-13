@@ -680,7 +680,10 @@ RET_VAL evalCustomFunction(AST_NODE *node)
 				
 				linkStackNodes(lambdaFunc->symbolTable, argValues);
 				
-				return eval(lambdaFunc);
+				RET_VAL result = eval(lambdaFunc);
+				result.type = lambdaST->val_type;
+				result.value = (result.type == INT_TYPE) ? floor(result.value) : result.value;
+				return result;
 			}
 			lambdaST = lambdaST->next;
 		}
